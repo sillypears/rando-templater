@@ -2,7 +2,7 @@ from PIL import Image
 from random import randint
 import os
 
-IMAGE = 'fish.png'
+IMAGE = '.png'
 NAME = IMAGE.split('.')[0:-1][0]
 overlay = Image.open(IMAGE)
 coloroutput = Image.new("RGBA", (overlay.height, overlay.width))
@@ -10,8 +10,8 @@ overlay = overlay.convert("RGBA")
 coloroutput = coloroutput.convert("RGBA")
 
 coloroutput.paste((255,255,255), (0,0, coloroutput.width, coloroutput.height))
-total_colors = randint(6,10)
-total_images = randint(5,20)
+total_colors = randint(10,30)
+total_images = randint(10,20)
 
 folder = f"outputs/{NAME}{randint(0,101010101)}/"
 os.makedirs(folder)
