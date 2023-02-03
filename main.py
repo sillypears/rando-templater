@@ -11,7 +11,7 @@ coloroutput = coloroutput.convert("RGBA")
 
 coloroutput.paste((255,255,255), (0,0, coloroutput.width, coloroutput.height))
 total_colors = randint(10,30)
-total_images = randint(10,20)
+total_images = randint(30,50)
 
 folder = f"outputs/{NAME}{randint(0,101010101)}/"
 os.makedirs(folder)
