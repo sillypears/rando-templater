@@ -6,7 +6,28 @@ import cv2
 import json
 import argparse
 
+def set_rgb_color() -> tuple:
+    return (randint(0,255), randint(0,255), randint(0,255), randint(100,255))
 
+def find_adj_rgb_color(color: tuple) -> str:
+
+    return 0
+
+def find_opp_rgb_color(color: tuple) -> str:
+
+    return 0
+
+def set_hsl_color() -> str:
+    return f"hsl({randint(0,360)}, {randint(0,100)}%, {randint(0,100)}%)"
+
+def find_adj_hsl_color(color: str) -> str:
+
+    return 0
+
+def find_opp_hsl_color(color: str) -> str:
+
+    return 0
+ 
 parser = argparse.ArgumentParser()
 
 parser.add_argument('-n', '--num', default=1, dest="HOWMANY", help="How many times to run")
@@ -38,7 +59,7 @@ for x in range(int(args.HOWMANY)):
         imagenum += 1
         layer = Image.open(f"{filenum}")
         layer_color = Image.new("RGBA", (layer.height, layer.width))
-        color = (randint(0,255), randint(0,255), randint(0,255), randint(100,255))
+        color = set_rgb_color()
         outImage = layer_color.paste(
                 color,
                 (0,0, layer.width, layer.height)
@@ -53,7 +74,7 @@ for x in range(int(args.HOWMANY)):
         rgba = [b, g, r, alpha]
         dst = cv2.merge(rgba, 4)
         cv2.imwrite(f"{OUTPUTFOLDER}/outimage{imagenum}.png", dst)
-        # print(f"Overlaying {filenum} with {color} and saving as outimage{imagenum}.png")
+        print(f"Overlaying {filenum} with {color} and saving as outimage{imagenum}.png")
 
     outimage = Image.new("RGBA", (overlay.height, overlay.width))
     for filenum in glob.glob(f"{OUTPUTFOLDER}/*"):
@@ -62,6 +83,6 @@ for x in range(int(args.HOWMANY)):
 
     outimage.paste(overlay, (0,0), overlay)
     outimage.save(f"{OUTPUTFOLDER}/final.png")
-    outimage.save(f"{NAME}/finals/{NAME}{OUTPUTFOLDERNUM+1}.png")
-    with open (f"{OUTPUTFOLDER}/colors.txt", "w") as w:
-        w.write("\n".join('%s,%s,%s,%s' % x for x in color_list))
+    outimage.save(f"{NAME}/finals/{NAME}{OUTPUTFOLDERNUM}.png")
+    # with open (f"{OUTPUTFOLDER}/colors.txt", "w") as w:
+    #     w.write("\n".join('%s,%s,%s' % x for x in color_list))
