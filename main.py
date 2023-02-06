@@ -1,50 +1,67 @@
 from PIL import Image
 from random import randint
-import os,sys
-
-NAME = 'Daisy_Clear_ColorwayTemplate'
-
-NUMFILES = len(os.listdir(NAME))
-
-print(f"There are {NUMFILES} layers")
+import os,glob
+from natsort import natsorted
+import cv2
+import json
+import argparse
 
 
-if not os.path.exists(f"{NAME}/outputs"):
-    os.makedirs(f"{NAME}/outputs")
+parser = argparse.ArgumentParser()
+
+parser.add_argument('-n', '--num', default=1, dest="HOWMANY", help="How many times to run")
+parser.add_argument('-s', '--sculpt', dest="SCULPTNAME", required=True, help="The name of the folder that has the layers to use")
+args = parser.parse_args()
+
+NAME = args.SCULPTNAME
+LAYERS = glob.glob(f"{NAME}/layer*.png")
+NUMFILES = len(LAYERS)
+
+print(f"running {args.HOWMANY} times.")
+for x in range(int(args.HOWMANY)):
+    OUTPUTFOLDERNUM = 1
+    OUTPUTFOLDER = f"{NAME}/output{OUTPUTFOLDERNUM}"
+    if glob.glob(f"{NAME}/output*"):
+        OUTPUTFOLDERNUM = int("".join([x for x in natsorted(glob.glob(f"{NAME}/output*"))[-1] if x.isdigit()]))
+        OUTPUTFOLDER = f"{NAME}/output{OUTPUTFOLDERNUM+1}"
+
+    os.makedirs(f"{OUTPUTFOLDER}")
+    if not os.path.exists(f"{NAME}/finals"): os.mkdir(f"{NAME}/finals")
+
+    overlay = Image.open(f"{NAME}/overlay.png")
+    canvas = Image.new("RGBA", (overlay.height, overlay.width))
+    color_list = []
+    imagenum = 0
 
 
-overlay = Image.open(f"{NAME}/overlay.png")
-canvas = Image.new("RGBA", (overlay.height, overlay.width))
+    for filenum in glob.glob(f"{NAME}/layer*.png"):
+        imagenum += 1
+        layer = Image.open(f"{filenum}")
+        layer_color = Image.new("RGBA", (layer.height, layer.width))
+        color = (randint(0,255), randint(0,255), randint(0,255), randint(100,255))
+        outImage = layer_color.paste(
+                color,
+                (0,0, layer.width, layer.height)
+            )
+        color_list.append(color)
+        layer_color.paste(layer, (0,0), layer)
+        layer_color.save(f"{OUTPUTFOLDER}/outimage{imagenum}.png")
+        src = cv2.imread(f"{OUTPUTFOLDER}/outimage{imagenum}.png")
+        tmp = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
+        _, alpha = cv2.threshold(tmp, 0, 255, cv2.THRESH_BINARY)
+        b, g, r = cv2.split(src)
+        rgba = [b, g, r, alpha]
+        dst = cv2.merge(rgba, 4)
+        cv2.imwrite(f"{OUTPUTFOLDER}/outimage{imagenum}.png", dst)
+        # print(f"Overlaying {filenum} with {color} and saving as outimage{imagenum}.png")
 
-for filenum in os.listdir(NAME):
-    layer = Image.open(f"{NAME}\{filenum}")
-    Image.new("RGBA", (layer.height, layer.width))
+    outimage = Image.new("RGBA", (overlay.height, overlay.width))
+    for filenum in glob.glob(f"{OUTPUTFOLDER}/*"):
+        layer = Image.open(filenum)
+        outimage.paste(layer, (0,0), layer)
 
-# overlay = Image.open(IMAGE)
-# coloroutput = Image.new("RGBA", (overlay.height, overlay.width))
-# overlay = overlay.convert("RGBA")
-# coloroutput = coloroutput.convert("RGBA")
-
-# coloroutput.paste((255,255,255), (0,0, coloroutput.width, coloroutput.height))
-# total_colors = randint(10,30)
-# total_images = randint(30,50)
-
-# folder = f"outputs/{NAME}{randint(0,101010101)}/"
-# os.makedirs(folder)
-
-# color_list = []
-# for image in range(0, total_images):
-#     for colors in range(0, total_colors):
-
-#         color = (randint(0,255), randint(0,255), randint(0,255))
-#         outImage = coloroutput.paste(
-#             color,
-#             (randint(0, overlay.width), randint(0, overlay.height), randint(0, overlay.width), randint(0, overlay.height))
-#         )
-#         color_list.append(color)
-#     coloroutput.paste(overlay, (0,0), overlay)
-#     coloroutput.save(f"{folder}/outimage{image}.png")
-
-
-
-# print(f"There were a total of {total_images} made")
+    outimage.paste(overlay, (0,0), overlay)
+    outimage.save(f"{OUTPUTFOLDER}/final.png")
+    outimage.save(f"{NAME}/finals/{NAME}{OUTPUTFOLDERNUM+1}.png")
+    with open (f"{OUTPUTFOLDER}/colors.txt", "w") as w:
+        w.write("\n".join('%s,%s,%s,%s' % x for x in color_list))
