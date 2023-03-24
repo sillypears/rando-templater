@@ -88,28 +88,28 @@ parser.add_argument('-s', '--sculpt', dest="SCULPTNAME", required=True, help="Th
 parser.add_argument('-m', '--model', dest="COLORMODEL", choices=["rgb", "hsl"], default="rgb", help="Uses random rgb or adjacent hsl values. Defaults rgb")
 args = parser.parse_args()
 
-NAME = args.SCULPTNAME
-LAYERS = glob.glob(f"{NAME}/layer*.png")
+NAME = f"{args.SCULPTNAME}"
+LAYERS = glob.glob(f"sculpts/{NAME}/layer*.png")
 NUMFILES = len(LAYERS)
 
 print(f"running {args.HOWMANY} times.")
 for x in range(int(args.HOWMANY)):
     OUTPUTFOLDERNUM = 1
-    OUTPUTFOLDER = f"{NAME}/output{OUTPUTFOLDERNUM}"
-    if glob.glob(f"{NAME}/output*"):
-        OUTPUTFOLDERNUM = int("".join([x for x in natsorted(glob.glob(f"{NAME}/output*"))[-1] if x.isdigit()]))
-        OUTPUTFOLDER = f"{NAME}/output{OUTPUTFOLDERNUM+1}"
+    OUTPUTFOLDER = f"sculpts/{NAME}/output{OUTPUTFOLDERNUM}"
+    if glob.glob(f"sculpts/{NAME}/output*"):
+        OUTPUTFOLDERNUM = int("".join([x for x in natsorted(glob.glob(f"sculpts/{NAME}/output*"))[-1] if x.isdigit()]))
+        OUTPUTFOLDER = f"sculpts/{NAME}/output{OUTPUTFOLDERNUM+1}"
 
     os.makedirs(f"{OUTPUTFOLDER}")
-    if not os.path.exists(f"{NAME}/finals"): os.mkdir(f"{NAME}/finals")
+    if not os.path.exists(f"sculpts/{NAME}/finals"): os.mkdir(f"sculpts/{NAME}/finals")
 
-    overlay = Image.open(f"{NAME}/overlay.png").convert("RGBA")
+    overlay = Image.open(f"sculpts/{NAME}/overlay.png").convert("RGBA")
     canvas = Image.new("RGBA", (overlay.width, overlay.height))
     color_list = []
     imagenum = 0
 
     color = set_rgb_color() if args.COLORMODEL == "rgb" else set_hsl_color()
-    for filenum in natsorted(glob.glob(f"{NAME}/layer*.png")):
+    for filenum in natsorted(glob.glob(f"sculpts/{NAME}/layer*.png")):
         imagenum += 1
         layer = Image.open(f"{filenum}").convert("RGBA")
         layer_color = Image.new("RGBA", (layer.width, layer.height))
@@ -141,7 +141,7 @@ for x in range(int(args.HOWMANY)):
 
     outimage.paste(overlay, (0,0), overlay)
     outimage.save(f"{OUTPUTFOLDER}/final.png")
-    outimage.save(f"{NAME}/finals/{NAME}{OUTPUTFOLDERNUM}.png")
+    outimage.save(f"sculpts/{NAME}/finals/{NAME}{OUTPUTFOLDERNUM}.png")
     with open (f"{OUTPUTFOLDER}/colors.txt", "w") as w:
         w.write("\n".join(x.__str__() for x in color_list))
         
