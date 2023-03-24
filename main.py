@@ -5,6 +5,7 @@ from natsort import natsorted
 import cv2
 import json
 import argparse
+import progressbar
 
 RGB_OPP_THRESH_LOW = 0
 RGB_OPP_THRESH_HIGH = 255
@@ -93,7 +94,8 @@ LAYERS = glob.glob(f"sculpts/{NAME}/layer*.png")
 NUMFILES = len(LAYERS)
 
 print(f"running {args.HOWMANY} times.")
-for x in range(int(args.HOWMANY)):
+# for x in range(int(args.HOWMANY)):
+for x in progressbar.progressbar(range(int(args.HOWMANY))):
     OUTPUTFOLDERNUM = 1
     OUTPUTFOLDER = f"sculpts/{NAME}/output{OUTPUTFOLDERNUM}"
     if glob.glob(f"sculpts/{NAME}/output*"):
