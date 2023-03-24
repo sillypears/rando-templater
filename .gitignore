@@ -325,3 +325,5 @@ cython_debug/
 */output*
 */layer*
 */overlay*
+sculpts/*
+Scripts/natsort.exe
