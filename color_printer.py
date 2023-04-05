@@ -22,9 +22,9 @@ def main():
         else:
             colors.append(m.find_opp_hsl_color(hsl1))
     # print([hls_to_rgb(x.hue, x.lum, x.sat) for x in colors])
-    for color in colors:
-        print(requests.get(f"https://{uri}/id?format=html&hsl={color.to_string()}").url)
-    return 0
+    # for color in colors:
+    #     print(f"https://{uri}/id?format=html&hsl={color.to_string()}")
+    print(requests.get(f"https://{uri}/scheme?mode=analogic-complement&count=5&format=html&hsl={colors[0].to_string()}").url)
 
 if __name__ == "__main__":
     sys.exit(main())
