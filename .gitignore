@@ -327,3 +327,4 @@ cython_debug/
 */overlay*
 sculpts/*
 Scripts/natsort.exe
+!sculpts/.gitkeep
