@@ -9,7 +9,8 @@ OUTPUT_FOLDER = 'color_swatches'
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--number', dest="total", type=int, default=5, help="how many colors :D")
-    
+    parser.add_argument('-t', '--type', dest="COLORMODEL", type=str, choices=["rgb", "hsl"], default="hsl", help="Uses random rgb or adjacent hsl values. Defaults rgb")
+    parser.add_argument('-m', '--mode', dest="MODE", type=str, choices=["mono", "mono-dark", "mono-light", "analogic", "complement", "analogic-complement"], default="analogic-complement", helper="Pick the mode to generate colors from")
     args = parser.parse_args()
     uri = "www.thecolorapi.com"
     
@@ -21,7 +22,7 @@ def main():
             colors.append(m.find_adj_hsl_color(hsl1))
         else:
             colors.append(m.find_opp_hsl_color(hsl1))
-    print(requests.get(f"https://{uri}/scheme?mode=analogic-complement&count={args.total}&format=html&hsl={colors[0].to_string()}").url)
+    print(requests.get(f"https://{uri}/scheme?mode={args.MODE}&count={args.total}&format=html&hsl={colors[0].to_string()}").url)
 
 if __name__ == "__main__":
     sys.exit(main())
