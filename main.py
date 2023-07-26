@@ -10,7 +10,7 @@ import progressbar
 from colorsys import hls_to_rgb
 import requests
 from secrets import choice
-
+from typing import TextIO
 from copy import deepcopy
 
 RGB_OPP_THRESH_LOW = 0
@@ -35,6 +35,9 @@ class HSL_Color(object):
     def to_string(self) -> str:
         return f"hsl({self.hue}, {self.sat}%, {self.lum}%)"
     
+    def to_web_string(self) -> str:
+        return f"{self.hue},{self.sat}%,{self.lum}%"
+    
     def to_tuple(self) -> tuple:
         return (self.hue, self.sat, self.lum)
     
@@ -57,6 +60,9 @@ class RGB_Color(object):
     def to_string(self) -> str:
         return (self.red, self.blu, self.gre, self.alp)
 
+    def to_web_string(self) -> str:
+        return f"{self.red},{self.gre},{self.blu}"
+    
     def to_tuple(self) -> tuple:
         return (self.r, self.g, self.g, self.alp)
 
@@ -119,6 +125,51 @@ def get_color_api_from_base(color: HSL_Color|RGB_Color, count: int, mode: str) -
             print(f"Color get error: {e}")
 
     return color_list
+
+def set_rgb_to_base(base: str) -> RGB_Color:
+    color = ""
+
+    res = requests.get(f"https://www.thecolorapi.com/id?hex={base}&format=json")
+    if res.status_code == 200:
+        try:
+            c = res.json()
+            color = RGB_Color(r=c['rgb']['r'], g=c['rgb']['g'], b=c['rgb']['b'], a=255)
+
+        except Exception as e:
+            print("Couldn't convert color: {res.status_code}, {res.text}")
+    return color
+
+def set_hsl_to_base(base: str) -> HSL_Color:
+    color = ""
+
+    res = requests.get(f"https://www.thecolorapi.com/id?hex={base}&format=json")
+    if res.status_code == 200:
+        try:
+            c = res.json()
+            color = HSL_Color(h=c['hsl']['h'], s=c['hsl']['s'], l=c['hsl']['l'])
+        except Exception as e:
+            print("Couldn't convert color: {res.status_code}, {res.text}")
+    return color
+
+def get_output_count(f) -> int:
+    with open(f, "r") as r:
+        try:
+            count = int(r.read())
+        except:
+            sys.exit(f"Couldn't get count number")
+    return count
+
+def increase_output_count(f) -> int:
+    with open(f, "r") as r:
+        try:
+            count = int(r.read())
+            count += 1
+        except Exception as e:
+            sys.exit("Couldn't read and increment count: e")
+    with open(f, "w") as w:
+        w.write(f"{count}")
+    return count
+    
 def main():
 
     parser = argparse.ArgumentParser()
@@ -126,22 +177,24 @@ def main():
     parser.add_argument('-n', '--num', default=1, dest="HOWMANY", type=int, help="How many times to run")
     parser.add_argument('-s', '--sculpt', dest="SCULPTNAME", type=str, required=True, help="The name of the folder that has the layers to use")
     parser.add_argument('-t', '--type', dest="COLORMODEL", type=str, choices=["rgb", "hsl"], default="rgb", help="Uses random rgb or adjacent hsl values. Defaults rgb")
-    parser.add_argument('-m', '--mode', dest="MODE", type=str, choices=["mono", "mono-dark", "mono-light", "analogic", "complement", "analogic-complement"], default="analogic-complement", help="Pick the mode to generate colors from")
+    parser.add_argument('-m', '--mode', dest="MODE", type=str, choices=["monochrome", "monochrome-dark", "monochrome-light", "analogic", "complement", "analogic-complement"], default="analogic-complement", help="Pick the mode to generate colors from")
     parser.add_argument('-c', '--count', dest="COUNT", type=int, default=5, help="Total number of colors to generate")
+    parser.add_argument('-b', '--basecolor', dest="BASECOLOR", type=str, default="", help="Base color to start with")
     args = parser.parse_args()
 
     NAME = f"{args.SCULPTNAME}"
     LAYERS = glob.glob(f"sculpts/{NAME}/layer*.png")
+    if not os.path.exists(f"sculpts/{NAME}/output_count.txt"):
+        with open(f"sculpts/{NAME}/output_count.txt", "w") as f:
+            f.write(f"0")
+    OUTPUT_COUNT = f"sculpts/{NAME}/output_count.txt"
     NUMFILES = len(LAYERS)
 
     print(f"running {args.HOWMANY} times.")
     # for x in range(int(args.HOWMANY)):
     for x in progressbar.progressbar(range(int(args.HOWMANY))):
-        OUTPUTFOLDERNUM = 1
-        OUTPUTFOLDER = f"sculpts/{NAME}/output{OUTPUTFOLDERNUM}"
-        if glob.glob(f"sculpts/{NAME}/output*"):
-            OUTPUTFOLDERNUM = int("".join([x for x in natsorted(glob.glob(f"sculpts/{NAME}/output*"))[-1] if x.isdigit()]))
-            OUTPUTFOLDER = f"sculpts/{NAME}/output{OUTPUTFOLDERNUM+1}"
+        OUTPUTFOLDERNUM = increase_output_count(OUTPUT_COUNT)
+        OUTPUTFOLDER = f"sculpts/{NAME}/output-{OUTPUTFOLDERNUM}"
 
         os.makedirs(f"{OUTPUTFOLDER}")
         if not os.path.exists(f"sculpts/{NAME}/finals"): os.mkdir(f"sculpts/{NAME}/finals")
@@ -149,7 +202,11 @@ def main():
         overlay = Image.open(f"sculpts/{NAME}/overlay.png").convert("RGBA")
         imagenum = 0
 
-        base_color = set_rgb_color() if args.COLORMODEL == "rgb" else set_hsl_color()
+        if args.BASECOLOR == "":
+            base_color = set_rgb_color() if args.COLORMODEL == "rgb" else set_hsl_color()
+        else:
+            base_color = set_rgb_to_base(args.BASECOLOR) if args.COLORMODEL == "rgb" else set_hsl_to_base(args.BASECOLOR)
+        
         colors = get_color_api_from_base(color=base_color, count=len(natsorted(glob.glob(f"sculpts/{NAME}/layer*.png"))), mode=args.MODE)
         color_list = deepcopy(colors)
         for filenum in natsorted(glob.glob(f"sculpts/{NAME}/layer*.png")):
@@ -163,14 +220,14 @@ def main():
                     (0,0, layer.width, layer.height)
                 )
             layer_color.paste(layer, (0,0), layer)
-            layer_color.save(f"{OUTPUTFOLDER}/outimage{imagenum}.png")
-            src = cv2.imread(f"{OUTPUTFOLDER}/outimage{imagenum}.png")
+            layer_color.save(f"{OUTPUTFOLDER}/outimage-{imagenum}.png")
+            src = cv2.imread(f"{OUTPUTFOLDER}/outimage-{imagenum}.png")
             tmp = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
             _, alpha = cv2.threshold(tmp, 0, 255, cv2.THRESH_BINARY)
             b, g, r = cv2.split(src)
             rgba = [b, g, r, alpha]
             dst = cv2.merge(rgba, 4)
-            cv2.imwrite(f"{OUTPUTFOLDER}/outimage{imagenum}.png", dst)
+            cv2.imwrite(f"{OUTPUTFOLDER}/outimage-{imagenum}.png", dst)
 
         outimage = Image.new("RGBA", (overlay.width, overlay.height))
         for filenum in glob.glob(f"{OUTPUTFOLDER}/*"):
@@ -179,7 +236,7 @@ def main():
 
         outimage.paste(overlay, (0,0), overlay)
         outimage.save(f"{OUTPUTFOLDER}/final.png")
-        outimage.save(f"sculpts/{NAME}/finals/{NAME}{OUTPUTFOLDERNUM}.png")
+        outimage.save(f"sculpts/{NAME}/finals/{NAME}-{OUTPUTFOLDERNUM}.png")
         with open (f"{OUTPUTFOLDER}/colors.txt", "w") as w:
             w.write("\n".join(x.to_string() for x in color_list))
             
