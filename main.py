@@ -25,15 +25,15 @@ HSL_OPP_THRESH_HIGH = 190
 HSL_ADJ_THRESH_LOW = 20
 HSL_ADJ_THRESH_HIGH = 40
 
-MODE_CHOICES=["monochrome", "monochrome-dark", "monochrome-light", "analogic", "complement", "analogic-complement"]
+MODE_CHOICES=["monochrome", "monochrome-dark", "monochrome-light", "analogic", "complement", "analogic-complement", "random"]
 
 
 class HSL_Color(object):
-    def __init__(self, h: int, s: int, l:int, name=None, hex=None):
+    def __init__(self, h: int, s: int, l:int, mode:str="hsl", name=None, hex=None):
         self.hue = h
         self.sat = s
         self.lum = l
-        self.mode = "hsl"
+        self.mode = mode
         self.name = name
         self.hex = hex
          
@@ -58,12 +58,12 @@ class HSL_Color(object):
 
 
 class RGB_Color(object):
-    def __init__(self, r:int, g:int, b:int, a:int, name:str=None, hex:str=None):
+    def __init__(self, r:int, g:int, b:int, a:int, mode:str="rgb", name:str=None, hex:str=None):
         self.red = r
         self.gre = g
         self.blu = b
         self.alp = a
-        self.mode = 'rgb'
+        self.mode = mode
         self.name = name
         self.hex = hex
 
@@ -130,7 +130,7 @@ def get_color_api_from_base(color: HSL_Color|RGB_Color, count: int, mode: str) -
     color_list = []
 
     res = requests.get(f"https://www.thecolorapi.com/scheme?mode={mode}&count={count}&format=json&{color.mode}={color.to_string()}")
-    # print(f"https://www.thecolorapi.com/scheme?mode={mode}&count={count}&format=json&{color.mode}={color.to_string()}")
+   # print(f"https://www.thecolorapi.com/scheme?mode={mode}&count={count}&format=json&{color.mode}={color.to_string()}")
     if res.status_code == 200:
         try: 
             for color in res.json()['colors']:
@@ -141,6 +141,16 @@ def get_color_api_from_base(color: HSL_Color|RGB_Color, count: int, mode: str) -
         except Exception as e:
             print(f"Color get error: {e}")
 
+    return color_list
+
+def get_random_colors(count: int) -> list:
+    color_list = []
+
+    for c in range(count):
+        try: 
+            color_list.append(set_hsl_color())
+        except Exception as e:
+            print(f"Color get error: {e}")
     return color_list
 
 def set_rgb_to_base(base: str) -> RGB_Color:
@@ -268,7 +278,10 @@ def main():
             count = int(args.COUNT)
         else:
             count = len(natsorted(glob.glob(f"sculpts/{NAME}/layer*.png")))
-        colors = get_color_api_from_base(color=base_color, count=count, mode=mode)
+        if mode != "random":
+            colors = get_color_api_from_base(color=base_color, count=count, mode=mode)
+        else:
+            colors = get_random_colors(count=count)
         if args.BASECOLOR:
             colors.pop(0)
             colors.insert(0, base_color)
@@ -281,7 +294,6 @@ def main():
             layer = Image.open(f"{filenum}").convert("RGBA")
             layer_color = Image.new("RGBA", (layer.width, layer.height))
             color = colors.pop(colors.index(choice(colors)))
-            # print(color)
             layer_color.paste(
                     color.to_string(),
                     (0,0, layer.width, layer.height)
