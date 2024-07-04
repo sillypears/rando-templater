@@ -326,5 +326,7 @@ cython_debug/
 */layer*
 */overlay*
 sculpts/*
-Scripts/natsort.exe
+Scripts/*
 !sculpts/.gitkeep
+
+Scripts/pip3.11.exe
