@@ -325,3 +325,6 @@ cython_debug/
 */output*
 */layer*
 */overlay*
+sculpts/*
+Scripts/*
+!sculpts/.gitkeep
