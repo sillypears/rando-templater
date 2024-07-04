@@ -328,5 +328,3 @@ cython_debug/
 sculpts/*
 Scripts/*
 !sculpts/.gitkeep
-
-Scripts/pip3.11.exe
