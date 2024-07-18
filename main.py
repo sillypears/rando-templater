@@ -278,10 +278,12 @@ def main():
             count = int(args.COUNT)
         else:
             count = len(natsorted(glob.glob(f"sculpts/{NAME}/layer*.png")))
+        
         if mode != "random":
             colors = get_color_api_from_base(color=base_color, count=count, mode=mode)
         else:
             colors = get_random_colors(count=count)
+        
         if args.BASECOLOR:
             colors.pop(0)
             colors.insert(0, base_color)
@@ -290,6 +292,11 @@ def main():
             colors = run_as_colorlist(args)
         color_list = deepcopy(colors)
         for filenum in natsorted(glob.glob(f"sculpts/{NAME}/layer*.png")):
+            # check for optional layer
+            if "opt" in filenum:
+                low = 1
+                high = 10
+                if randint(low, high) % high != 0: continue
             imagenum += 1
             layer = Image.open(f"{filenum}").convert("RGBA")
             layer_color = Image.new("RGBA", (layer.width, layer.height))
