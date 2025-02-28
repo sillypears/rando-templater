@@ -130,7 +130,6 @@ def get_color_api_from_base(color: HSL_Color|RGB_Color, count: int, mode: str) -
     color_list = []
 
     res = requests.get(f"https://www.thecolorapi.com/scheme?mode={mode}&count={count}&format=json&{color.mode}={color.to_string()}")
-   # print(f"https://www.thecolorapi.com/scheme?mode={mode}&count={count}&format=json&{color.mode}={color.to_string()}")
     if res.status_code == 200:
         try: 
             for color in res.json()['colors']:
@@ -316,6 +315,8 @@ def main():
             cv2.imwrite(f"{OUTPUTFOLDER}/outimage-{imagenum}.png", dst)
 
         outimage = Image.new("RGBA", (overlay.width, overlay.height))
+        if os.path.exists("bottom.png"):
+            outimage.paste(Image.open("bottom.png"), (0,0), Image.open("bottom.png"))
         for filenum in glob.glob(f"{OUTPUTFOLDER}/*"):
             layer = Image.open(filenum)
             outimage.paste(layer, (0,0), layer)
